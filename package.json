@@ -1,0 +1,48 @@
+{
+  "name": "dsh-fcp",
+  "version": "1.0.0",
+  "description": "在 DSH 里搭建金融消保工作台，帮助消保从业人员一站式完成政策研究、消保审查、投诉管理、金融教育、合规销售与综合管理：六位内置专家自动调度、技能市场、知识库配置、思维方法卡片与规范公文输出。",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openfcp/dsh-fcp.git"
+  },
+  "homepage": "https://github.com/openfcp/dsh-fcp#readme",
+  "bugs": {
+    "url": "https://github.com/openfcp/dsh-fcp/issues"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "consumer-protection",
+    "financial-skills",
+    "ima",
+    "obsidian"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "author": {
+    "name": "八大权益"
+  }
+}

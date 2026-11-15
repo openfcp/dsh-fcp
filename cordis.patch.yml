@@ -1,0 +1,4 @@
+# dsh-fcp bundle layer：把插件挂到 profile 组合里，浏览器半才会被发现。
+- insert:
+    - id: fcp
+      name: dsh-fcp
