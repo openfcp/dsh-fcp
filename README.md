@@ -6,7 +6,7 @@
 
 - 作者：**八大权益**
 - 许可证：MIT
-- 当前版本：**1.0.0**（首个公开发布版本）
+- 当前版本：**1.0.1**（安全加固与稳定性修复版本）
 - 仓库：https://github.com/openfcp/dsh-fcp
 
 ## 适用人群与场景
@@ -39,7 +39,7 @@
 
 ### 技能
 
-- 技能配置读取 GitHub `openfcp/awesome-financial-skills` 目录（与 `openfcp/dsh-financial-skills` 双源校验）
+- 技能配置读取 GitHub `openfcp/awesome-financial-skills` 目录（与 `openfcp/dsh-financial-skills` 双源校验），结果缓存 5 分钟，点「刷新」强制重新拉取
 - 搜索、分类、全部/已安装筛选、详情（版本/许可/作者/标签/说明）
 - 安装 / 卸载；系统技能标记不可删除
 - 安装状态保存在本机，不依赖「金融技能」插件
@@ -83,7 +83,7 @@
 
 ## 安装
 
-从 [GitHub Releases](https://github.com/openfcp/dsh-fcp/releases) 下载 `dsh-fcp-1.0.0.zip` 解压，或直接克隆本仓库：
+从 [GitHub Releases](https://github.com/openfcp/dsh-fcp/releases) 下载 `dsh-fcp-1.0.1.zip` 解压，或直接克隆本仓库：
 
 ```sh
 git clone https://github.com/openfcp/dsh-fcp.git
@@ -113,12 +113,13 @@ dsh-fcp/
 ├── README.md
 ├── LICENSE
 ├── CHANGELOG.md
-└── lib/
-    ├── index.js        Host：路由、会话绑定、专家注入
-    ├── experts.js      六位专家与关键词路由
-    ├── client.js       Web 客户端：首页、设置、技能、知识、截图
-    ├── logo.png
-    └── assets/         IMA / Obsidian 品牌图标
+├── lib/
+│   ├── index.js        Host：路由守卫、会话绑定、专家注入
+│   ├── experts.js      六位专家与关键词路由
+│   ├── client.js       Web 客户端：首页、设置、技能、知识、截图
+│   └── logo.png
+├── test/               本地测试（node:test）
+└── .github/workflows/   CI：语法检查与测试
 ```
 
 ## 数据与隐私
@@ -126,12 +127,16 @@ dsh-fcp/
 - 插件配置（IMA Key、Obsidian 路径、模型、技能选择）保存在浏览器 `localStorage`
 - 技能安装状态保存在 `~/.dsh/storages/fcp/skills-state.json`
 - 技能目录请求发往 GitHub / jsDelivr；IMA 知识库列表请求发往 `ima.qq.com`
-- 截图临时文件保存在系统临时目录
+- 截图临时文件保存在系统临时目录，超过 24 小时会在下次截图时清理
 - 插件不上传会话内容，不包含任何账号凭据
+- 所有 `/api/fcp/*` 路由仅监听本机回环，并校验 `Host` 只允许 `localhost` / `127.0.0.1` / `[::1]`；写操作还要求同源自定义头 `x-fcp-client: 1` 与 `application/json` 请求体，以挡住 DNS rebinding 与跨站请求
+- Obsidian 目录选择限定在用户主目录内（含符号链接）解析，不能列任意绝对路径
+- 技能安装 id 限定为清单中的已知 id（或远程目录中的 id），并且有长度与字符集上限
 
 ## 开发自检
 
 ```sh
+npm test
 node --check lib/index.js
 node --check lib/client.js
 node --check lib/experts.js
@@ -139,7 +144,8 @@ node --check lib/experts.js
 
 ## 版本历史
 
-- **1.0.0**：首个公开发布版本，元数据、文档与隐私信息规范化，详见 [CHANGELOG.md](CHANGELOG.md)。
+- **1.0.1**：安全加固（Host / 同源校验、目录沙箱、技能 id 白名单）、修复浏览器截图兜底、补测试与 CI，详见 [CHANGELOG.md](CHANGELOG.md)。
+- **1.0.0**：首个公开发布版本，元数据、文档与隐私信息规范化。
 
 ## 许可证
 
