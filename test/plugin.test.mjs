@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { realpath } from 'node:fs/promises'
+import { mkdir, realpath, rm } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -94,7 +94,15 @@ test('guard 对读请求校验 Host，对写请求额外要求同源', () => {
 test('fs-list 的目标只能落在 home 目录内', async () => {
   const home = await realpath(homedir())
   assert.equal(await safeDirectory('.', home), home)
-  assert.equal(await safeDirectory('Documents', home), resolve(home, 'Documents'))
+  const scratchName = '.dsh-fcp-test-' + process.pid
+  const scratch = join(home, scratchName)
+  await mkdir(scratch, { recursive: true })
+  try {
+    assert.equal(await safeDirectory(scratchName, home), await realpath(scratch))
+    assert.equal(await safeDirectory(scratch, home), await realpath(scratch))
+  } finally {
+    await rm(scratch, { recursive: true, force: true })
+  }
   assert.equal(await safeDirectory('/etc', home), null)
   assert.equal(await safeDirectory('../../etc', home), null)
   assert.equal(await safeDirectory('/Applications', home), null)
