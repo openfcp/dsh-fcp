@@ -8,6 +8,10 @@ import { fileURLToPath } from 'node:url'
 import { Readable } from 'node:stream'
 import { _internal } from '../lib/index.js'
 import { EXPERTS, expertById, routeTask } from '../lib/experts.js'
+import {
+  parseFrontmatter, normalizeSkillFrontmatter, resolveDshHome,
+  extractZip,
+} from '../lib/skills.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const {
@@ -139,10 +143,44 @@ test('六位专家可解析，路由有关键词命中与兜底', () => {
 test('包元数据与发布版本一致且声明了 dsh.bundle', () => {
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
   assert.equal(pkg.name, 'dsh-fcp')
-  assert.equal(pkg.version, '1.0.1')
+  assert.equal(pkg.version, '2.0.0')
   assert.equal(pkg.author.name, '八大权益')
   assert.ok(pkg.dsh?.bundle?.patch)
-  assert.equal(pkg.license, 'MIT')
+  assert.equal(pkg.license, 'SEE LICENSE IN LICENSE')
   const readme = readFileSync(join(root, 'README.md'), 'utf8')
-  assert.match(readme, /1\.0\.1/)
+  assert.match(readme, /2\.0\.0/)
+})
+
+test('技能 frontmatter 解析与归一化（宿主只认 kebab-case 调用名）', () => {
+  const fm = parseFrontmatter('---\nname: ppt-master\ndescription: 生成演示文稿\n---\n# Skill')
+  assert.equal(fm.name, 'ppt-master')
+  assert.equal(fm.description, '生成演示文稿')
+
+  const bad = normalizeSkillFrontmatter('---\nname: PPT Master\n---\n正文', 'ai-ppt-skill', '演示文稿')
+  assert.equal(bad.invocationName, 'ai-ppt-skill')
+  assert.match(bad.content, /name: ai-ppt-skill/)
+  assert.match(bad.content, /description: 演示文稿/)
+
+  const missing = normalizeSkillFrontmatter('# 无 frontmatter', 'my-skill', '说明')
+  assert.equal(missing.invocationName, 'my-skill')
+  assert.match(missing.content, /^---\nname: my-skill/)
+})
+
+test('DSH_HOME 解析遵循显式值 > 环境变量 > ~/.dsh', () => {
+  assert.equal(resolveDshHome('/custom/dsh'), resolve('/custom/dsh'))
+  assert.equal(resolveDshHome(''), join(homedir(), '.dsh'))
+  assert.equal(isValidSkillId('consumer-protection-review'), true)
+  assert.equal(isValidSkillId('../evil'), false)
+})
+
+test('zip 解压对无效数据明确报错', () => {
+  assert.throws(() => extractZip(Buffer.from('not a zip')), /EOCD/)
+  assert.throws(() => extractZip(Buffer.alloc(40)), /EOCD/)
+})
+
+test('许可证为个人非商业使用协议且含联系邮箱', () => {
+  const license = readFileSync(join(root, 'LICENSE'), 'utf8')
+  assert.match(license, /非商业|非商用/)
+  assert.match(license, /仅供个人/)
+  assert.match(license, /support@openfcp\.com/)
 })

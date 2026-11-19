@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.0.0
+
+- 首页输入框：右侧改为「模型全名 + 话筒 + 发送」；删除输入框内多余齿轮；剪刀右侧新增工作模式选择器（标准 / PTC / 极简 / 创造），样式对齐 DSH 原生菜单
+- 发送后直接进入对话流程并开始执行，无需二次点击：通过 `openWorkspace` 的 `beforeOpen` 写草稿并自动 `submit()`，失败安全回退到 `startSession`
+- 技能配置页对齐 `dsh-financial-skills` v0.2.3：banner、数据源/更新、唯一刷新按钮、搜索、全部/已安装、分类胶囊、长条卡片；归一化字段（name/summary 双语、source、version、license、author、tags、verifiedAt）与之保持一致
+- 技能真安装与跨插件同步：新增共享技能层 `lib/skills.js`，把技能落到 `<DSH_HOME>/skills/<id>/`，装完调用宿主 `skills.invalidateCache()` + `fs/observed` 立即生效；两插件安装的技能互相可见、双向同步；首页监听事件/存储变化并定时同步，无需重启
+- IMA 知识配置重构为上下两部分（中间横线）：上半描述 + API Key/Client ID + 保存凭证；下半「可选择知识库」表格（滚动、勾选）+ 保存；点击右上角 IMA 图标直达该页
+- 模型配置卡片化：云端标识改为左下角云朵图标，「添加模型」右对齐；下拉选择国内主流模型（DeepSeek / 通义千问 / 豆包 / 智谱 / Kimi / MiniMax / 混元），厂商与基本字段自动带入
+- 帮助页同步全部改动，并新增 support@openfcp.com 联系入口
+- 全界面适配 macOS 与 Windows：右上角三按钮改为相对 root 定位不再被标题栏裁掉；截图在 Windows 退回浏览器截屏；快捷键文案区分双平台
+- 性能优化与冗余清理：删除未使用的 FilePicker / SkillPicker / configRow 与调试角标；首页技能状态增量同步
+- 许可证改为个人非商业使用协议（APEC），仅供个人下载使用、禁止商用；重写 README 并新增 SVG 头图
+
 ## 1.0.1
 
 - 安全加固（对应 issue #1）：14 个 Host 路由统一守卫，增加回环地址 + `Host` 白名单；写操作要求 `x-fcp-client: 1` 同源头、校验 `Origin` / `Sec-Fetch-Site`，并要求 `application/json` 请求体

@@ -1,21 +1,41 @@
-MIT License
+八大权益个人非商业使用许可协议（APEC · Personal Non-Commercial License）
+版本 1.0
 
-Copyright (c) 2026 八大权益
+著作权所有 (c) 2026 八大权益
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+使用前请仔细阅读本协议。下载、安装、复制或使用本插件（"本软件"），即表示
+你已阅读并同意遵守本协议的全部条款。若你代表某一机构接受本协议，你声明你
+有权代表该机构作出接受。
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+一、授权范围
+1. 本软件仅供个人下载、安装和学习研究使用。
+2. 在遵守本协议的前提下，著作权人授予你一项不可转让、不可再许可、非独占的
+   权利，仅可为个人非商业目的使用本软件。
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+二、明确禁止
+1. 禁止将本软件用于任何商业目的，包括但不限于：在企业、机构或任何营利性
+   组织中作为生产工具使用；对外提供付费服务；集成进商业产品；销售、出租、
+   分销本软件或以本软件为基础收费。
+2. 禁止对本软件进行反向工程、反编译、反汇编，或删除、篡改版权声明。
+3. 禁止利用本软件从事任何违反法律法规或侵害第三方合法权益的活动。
+
+三、保留权利
+1. 本软件的所有著作权、商标权及其他知识产权均归八大权益所有。
+2. 本协议未明确授予的一切权利均予以保留。
+
+四、免责声明
+1. 本软件按"现状"提供，不提供任何明示或默示的保证，包括但不限于对适销性、
+   特定用途适用性及不侵权的保证。
+2. 在任何情况下，著作权人对因使用或无法使用本软件而产生的任何直接或间接
+   损失不承担责任。
+3. 本软件为 AI 辅助工具，输出内容仅供参考，不构成法律意见或监管结论；请以
+   现行有效的法律法规和监管机构正式口径为准。
+
+五、协议终止
+若你违反本协议的任何条款，本协议自动终止，你须立即停止使用并删除本软件。
+
+六、其他
+本协议受中华人民共和国法律管辖。如本协议条款与强制性法律相抵触，以该
+强制性法律为准，其余条款继续有效。
+
+联系：support@openfcp.com

@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" width="1200" height="460" role="img" aria-label="dsh-fcp 金融消保工作台头图">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7f9ff"/>
+      <stop offset="0.55" stop-color="#eef3ff"/>
+      <stop offset="1" stop-color="#e6ecfb"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0B57D0"/>
+      <stop offset="1" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#02178E"/>
+      <stop offset="1" stop-color="#0B57D0"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#1e3a8a" flood-opacity="0.12"/>
+    </filter>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#1e3a8a" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="460" fill="url(#bg)"/>
+  <!-- 背景网格 -->
+  <g stroke="#c9d6f5" stroke-width="1" opacity="0.45">
+    <path d="M0 60H1200M0 130H1200M0 200H1200M0 270H1200M0 340H1200M0 410H1200"/>
+    <path d="M120 0V460M260 0V460M400 0V460M540 0V460M680 0V460M820 0V460M960 0V460M1100 0V460"/>
+  </g>
+  <circle cx="1080" cy="60" r="180" fill="#0B57D0" opacity="0.05"/>
+  <circle cx="90" cy="420" r="150" fill="#02178E" opacity="0.05"/>
+
+  <!-- 标题区 -->
+  <g transform="translate(72,96)">
+    <rect x="0" y="0" width="54" height="54" rx="14" fill="url(#navy)" filter="url(#soft)"/>
+    <path d="M13 16h12a4 4 0 0 1 4 4v9a4 4 0 0 1-4 4h-4v5h-8z" fill="#fff"/>
+    <path d="M27 20h14a4 4 0 0 1 4 4v5a4 4 0 0 1-4 4h-6v4h-8z" fill="#8AB4F8"/>
+    <text x="72" y="24" font-family="PingFang SC,Microsoft YaHei,Arial,sans-serif" font-size="15" fill="#0B57D0" font-weight="600" letter-spacing="3">八大权益 · DSH 插件</text>
+    <text x="70" y="66" font-family="PingFang SC,Microsoft YaHei,Arial,sans-serif" font-size="40" fill="#101828" font-weight="700">金融消保工作台</text>
+    <text x="72" y="104" font-family="PingFang SC,Microsoft YaHei,Arial,sans-serif" font-size="17" fill="#475467">把工作流程、要点、技能与知识打包成一处，让消保岗位迅速、高效地开展工作。</text>
+    <g font-family="PingFang SC,Microsoft YaHei,Arial,sans-serif" font-size="13">
+      <rect x="72" y="128" width="86" height="28" rx="14" fill="#0B57D0"/>
+      <text x="94" y="147" fill="#fff">查政策</text>
+      <rect x="168" y="128" width="86" height="28" rx="14" fill="#fff" stroke="#c9d6f5"/>
+      <text x="190" y="147" fill="#344054">做审查</text>
+      <rect x="264" y="128" width="86" height="28" rx="14" fill="#fff" stroke="#c9d6f5"/>
+      <text x="286" y="147" fill="#344054">处投诉</text>
+      <rect x="360" y="128" width="86" height="28" rx="14" fill="#fff" stroke="#c9d6f5"/>
+      <text x="382" y="147" fill="#344054">搞宣教</text>
+      <rect x="456" y="128" width="86" height="28" rx="14" fill="#fff" stroke="#c9d6f5"/>
+      <text x="478" y="147" fill="#344054">管销售</text>
+    </g>
+  </g>
+
+  <!-- 右侧产品示意：工作台卡片 -->
+  <g transform="translate(760,70)" filter="url(#shadow)">
+    <rect width="368" height="320" rx="18" fill="#fff" stroke="#dbe4f7"/>
+    <rect width="368" height="46" rx="18" fill="#f8faff"/>
+    <path d="M0 46h368" stroke="#e6ecfb"/>
+    <circle cx="24" cy="23" r="6" fill="#0B57D0"/>
+    <text x="40" y="28" font-family="PingFang SC,Arial,sans-serif" font-size="13" fill="#101828" font-weight="600">消保工作台</text>
+    <text x="300" y="28" font-family="Arial,sans-serif" font-size="11" fill="#98A2B3">v2.0.0</text>
+
+    <!-- 专家胶囊 -->
+    <g font-family="PingFang SC,Arial,sans-serif" font-size="11">
+      <rect x="20" y="62" width="66" height="26" rx="13" fill="#0B57D0"/><text x="32" y="79" fill="#fff">政策研究</text>
+      <rect x="94" y="62" width="66" height="26" rx="13" fill="#eef3ff" stroke="#c9d6f5"/><text x="106" y="79" fill="#344054">消保审查</text>
+      <rect x="168" y="62" width="66" height="26" rx="13" fill="#eef3ff" stroke="#c9d6f5"/><text x="180" y="79" fill="#344054">投诉管理</text>
+      <rect x="242" y="62" width="66" height="26" rx="13" fill="#eef3ff" stroke="#c9d6f5"/><text x="254" y="79" fill="#344054">金融教育</text>
+    </g>
+
+    <!-- 输入区 -->
+    <rect x="20" y="104" width="328" height="120" rx="14" fill="#fff" stroke="#dbe4f7"/>
+    <text x="36" y="132" font-family="PingFang SC,Arial,sans-serif" font-size="12" fill="#98A2B3">描述你的任务，例如：审查这份营销材料是否合规…</text>
+    <rect x="34" y="182" width="112" height="28" rx="14" fill="#f2f4f8"/>
+    <text x="46" y="200" font-family="PingFang SC,Arial,sans-serif" font-size="11" fill="#475467">标准模式 ⌄</text>
+    <text x="156" y="200" font-family="Arial,sans-serif" font-size="11" fill="#475467">DeepSeek-V4.1-Flash High</text>
+    <circle cx="318" cy="196" r="16" fill="url(#blue)"/>
+    <path d="M318 188v16m0-16-5 5m5-5 5 5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- 能力行 -->
+    <g font-family="PingFang SC,Arial,sans-serif" font-size="11">
+      <rect x="20" y="244" width="98" height="30" rx="8" fill="#f8faff" stroke="#e6ecfb"/><text x="34" y="263" fill="#344054">＋ 技能目录</text>
+      <rect x="126" y="244" width="98" height="30" rx="8" fill="#f8faff" stroke="#e6ecfb"/><text x="140" y="263" fill="#344054">◈ 知识库</text>
+      <rect x="232" y="244" width="116" height="30" rx="8" fill="#f8faff" stroke="#e6ecfb"/><text x="246" y="263" fill="#344054">✂ 截图提问</text>
+    </g>
+    <path d="M20 292h328" stroke="#eef1f7"/>
+    <text x="20" y="312" font-family="PingFang SC,Arial,sans-serif" font-size="11" fill="#667085">六位专家自动调度 · 答案可溯源 · 输出规范公文</text>
+  </g>
+</svg>
