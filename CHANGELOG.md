@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.1
+
+- 安全加固（对应 issue #1）：14 个 Host 路由统一守卫，增加回环地址 + `Host` 白名单；写操作要求 `x-fcp-client: 1` 同源头、校验 `Origin` / `Sec-Fetch-Site`，并要求 `application/json` 请求体
+- `fs-list` 目录选择限制在用户主目录内，经 `realpath` 解析，拒绝 `/etc` 等绝对路径、上级目录穿越与符号链接逃逸；响应不再回传主目录绝对路径
+- `skill-install` / `skill-uninstall` 只接受内置/市场清单或远程目录中的合法 id，带长度与字符集上限；技能名称限长并拒绝控制字符
+- 修复浏览器截图兜底：`snip-save` 的 JSON 上限提高到 8 MB、解码后 PNG 限 6 MB，校验 PNG 签名；截图临时文件名加随机后缀并每日清理
+- 移除 IMA 知识库响应中的调试字段 `sampleKeys`；技能目录缓存 5 分钟，刷新按钮可强制绕过
+- 修复首页「已安装技能」与 Host 状态文件可能不一致的问题，统一以 Host 状态为准
+- 修复回退模型列表与实际默认模型不一致；改进接口错误提示；移除生产调试日志；删除未被引用的 IMA / Obsidian 图标文件
+- 新增 `node:test` 测试套件与 GitHub Actions CI（push / PR 自动跑测试）
+
 ## 1.0.0
 
 - 首个公开发布版本，发布至 GitHub `openfcp/dsh-fcp`，附带 v1.0.0 Release 与安装包
