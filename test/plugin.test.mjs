@@ -14,6 +14,7 @@ import {
 } from '../lib/skills.js'
 import {
   tokenize, scoreMatch, buildChunks, createKnowledgeTool, normalizeSources,
+  rewriteImaQueries, searchIma,
 } from '../lib/kb.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -215,6 +216,37 @@ test('知识检索工具定义符合 ctx.tools.register 契约', () => {
   const rendered = tool.output.render({ query: 'x' }, { found: false, sources: [], guidance: '未检索到' })
   assert.equal(rendered[0].type, 'text')
   assert.match(rendered[0].text, /未检索到/)
+})
+
+test('IMA 长句按精确匹配特性拆成可命中的短词', () => {
+  const queries = rewriteImaQueries('适当性管理 投资者适当性 发展脉络 监管规定')
+  assert.ok(queries.includes('适当性管理 投资者适当性 发展脉络 监管规定'))
+  assert.ok(queries.includes('适当性管理'))
+  assert.ok(queries.includes('投资者适当性'))
+  assert.ok(queries.includes('适当性'))
+})
+
+test('IMA 检索不再因内部变量未定义而静默失败，且长句能降级命中', async () => {
+  const originalFetch = globalThis.fetch
+  const seen = []
+  globalThis.fetch = async (_url, options) => {
+    const body = JSON.parse(options.body)
+    seen.push(body.query)
+    // 模拟 IMA 精确匹配：只有短词「适当性管理」能命中
+    const list = body.query === '适当性管理'
+      ? [{ title: '保险公司适当性管理监管政策梳理', highlight_content: '适当性管理要求' }]
+      : []
+    return { ok: true, status: 200, json: async () => ({ code: 0, data: { info_list: list } }) }
+  }
+  try {
+    const ima = { apiKey: 'k', clientId: 'c', selectedKbs: ['kb1'], kbs: [{ id: 'kb1', name: '核心文件' }] }
+    const result = await searchIma(ima, '适当性管理 投资者适当性 发展脉络 监管规定')
+    assert.ok(result.length > 0, '长句应降级命中短词结果')
+    assert.equal(result[0].title, '保险公司适当性管理监管政策梳理 · 核心文件')
+    assert.ok(seen.includes('适当性管理'))
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })
 
 test('知识检索返回值严格符合 output schema，不泄漏内部 score 字段', () => {
