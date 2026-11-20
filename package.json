@@ -1,6 +1,6 @@
 {
   "name": "dsh-fcp",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "在 DSH 里搭建金融消保工作台，帮助消保从业人员一站式完成政策研究、消保审查、投诉管理、金融教育、合规销售与综合管理：六位内置专家自动调度、技能市场、知识库配置、思维方法卡片与规范公文输出。",
   "license": "SEE LICENSE IN LICENSE",
   "repository": {

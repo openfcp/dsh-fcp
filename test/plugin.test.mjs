@@ -1,16 +1,16 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { mkdir, realpath, rm } from 'node:fs/promises'
+import { mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Readable } from 'node:stream'
 import { _internal } from '../lib/index.js'
-import { EXPERTS, expertById, routeTask } from '../lib/experts.js'
+import { EXPERTS, expertById, routeTask, routeSkills, DEFAULT_SKILL_IDS } from '../lib/experts.js'
 import {
   parseFrontmatter, normalizeSkillFrontmatter, resolveDshHome,
-  extractZip,
+  extractZip, mergedInstalledState, writeSkillState,
 } from '../lib/skills.js'
 import {
   tokenize, scoreMatch, buildChunks, createKnowledgeTool, normalizeSources,
@@ -144,15 +144,130 @@ test('六位专家可解析，路由有关键词命中与兜底', () => {
   assert.equal(routeTask('随便聊点别的').expertId, 'general')
 })
 
+test('技能关键词路由命中多项、按分数排序且可截断', () => {
+  const one = routeSkills('这单投诉已经超期，需要答复口径')
+  assert.ok(one.skillIds.includes('complaint-management'))
+
+  // 一个任务可命中多个技能；命中项带关键词证据，便于排查；默认最多 3 个避免 prompt 膨胀
+  const many = routeSkills('审查营销文案协议条款，同时检查适当性和双录，并做自评考核')
+  assert.ok(many.skillIds.includes('consumer-protection-review'))
+  assert.ok(many.skillIds.includes('compliance-sales'))
+  assert.ok(many.skillIds.length <= 3)
+  assert.ok(many.matched.every((item) => item.keywords.length > 0 && item.score > 0))
+  assert.ok(routeSkills('制定消保检查计划并迎检').skillIds.includes('consumer-protection-inspection'))
+
+  const limited = routeSkills('审查营销文案协议条款，同时检查适当性和双录，并做自评考核', { limit: 2 })
+  assert.equal(limited.skillIds.length, 2)
+  assert.equal(routeSkills('随便聊点别的').skillIds.length, 0)
+  assert.deepEqual(routeSkills('').skillIds, [])
+})
+
+test('Host 内部导出技能路由，供 /api/fcp/route-skills 复用', () => {
+  assert.equal(typeof _internal.routeSkills, 'function')
+  assert.ok(_internal.routeSkills('帮我做公文写作并润色').skillIds.includes('official-document-skill'))
+  assert.ok(_internal.routeSkills('把材料做公文排版，生成红头正式文件').skillIds.includes('gongwenformat-pro'))
+})
+
+test('默认技能清单：删掉目录中不存在的两项，加入两个公文技能', () => {
+  assert.equal(DEFAULT_SKILL_IDS.length, 9)
+  assert.equal(new Set(DEFAULT_SKILL_IDS).size, 9)
+  // 这两项在远端技能目录中不存在，装不上，已从默认安装里移除
+  assert.ok(!DEFAULT_SKILL_IDS.includes('policy-research'))
+  assert.ok(!DEFAULT_SKILL_IDS.includes('financial-literacy-education'))
+  // 用户指定的两个新增默认技能
+  assert.ok(DEFAULT_SKILL_IDS.includes('official-document-skill'))
+  assert.ok(DEFAULT_SKILL_IDS.includes('gongwenformat-pro'))
+  for (const id of DEFAULT_SKILL_IDS) assert.equal(isValidSkillId(id), true)
+  // 关键词表覆盖全部默认技能，不会路由出清单外的 id
+  const routable = [
+    '审查这份营销文案', '投诉工单超期', '写长文口播封面', '消保检查计划',
+    '监管评价自评', '双录适当性', '躺平公文味', '公文写作润色', '公文排版红头',
+  ].flatMap((text) => routeSkills(text, { limit: 9 }).skillIds)
+  for (const id of DEFAULT_SKILL_IDS) assert.ok(routable.includes(id), '未覆盖默认技能：' + id)
+})
+
+test('方案 B：默认技能自动安装幂等，缺失/失败/目录不可用均安全降级', async () => {
+  const { ensureDefaultSkills } = _internal
+  const scratch = join(homedir(), '.dsh-fcp-defaultskills-' + process.pid)
+  const skillsRoot = join(scratch, 'skills')
+  await mkdir(join(skillsRoot, 'already-there'), { recursive: true })
+  await writeFile(join(skillsRoot, 'already-there', 'SKILL.md'), '---\nname: already-there\n---\n', 'utf8')
+  try {
+    const installed = []
+    const catalog = { skills: [
+      { id: 'will-install', source: { type: 'skillhub' } },
+      { id: 'will-fail', source: { type: 'skillhub' } },
+    ] }
+    const opts = {
+      dshHome: scratch,
+      catalog,
+      ids: ['already-there', 'will-install', 'will-fail', 'not-in-catalog'],
+      install: async (skill) => {
+        if (skill.id === 'will-fail') throw new Error('network down')
+        installed.push(skill.id)
+        const dir = join(skillsRoot, skill.id)
+        await mkdir(dir, { recursive: true })
+        await writeFile(join(dir, 'SKILL.md'), '---\nname: ' + skill.id + '\n---\n', 'utf8')
+        return { path: dir }
+      },
+    }
+    const first = Object.fromEntries((await ensureDefaultSkills(opts)).map((item) => [item.id, item]))
+    assert.equal(first['already-there'].status, 'already')
+    assert.equal(first['will-install'].status, 'installed')
+    assert.equal(first['will-fail'].status, 'failed')
+    assert.equal(first['not-in-catalog'].status, 'missing-in-catalog')
+    assert.deepEqual(installed, ['will-install'])
+
+    const state = JSON.parse(await readFile(join(scratch, 'storages', 'fcp', 'skills-state.json'), 'utf8'))
+    assert.ok(state.installed.includes('already-there'))
+    assert.ok(state.installed.includes('will-install'))
+    assert.ok(!state.installed.includes('will-fail'))
+    assert.ok(!state.installed.includes('not-in-catalog'))
+
+    // 第二次启动：已落盘的不再重复下载
+    const second = Object.fromEntries((await ensureDefaultSkills(opts)).map((item) => [item.id, item]))
+    assert.equal(second['will-install'].status, 'already')
+    assert.deepEqual(installed, ['will-install'])
+
+    // 技能目录不可达时不抛错，全部标记 catalog-unavailable
+    const offline = await ensureDefaultSkills({ dshHome: scratch, catalog: null, ids: ['offline-skill'] })
+    assert.equal(offline[0].status, 'catalog-unavailable')
+  } finally {
+    await rm(scratch, { recursive: true, force: true })
+  }
+})
+
+test('知识来源白名单：工作台会话强制只用 IMA/Obsidian/上传库，且不注入到其他会话', () => {
+  const { contextText: build, KNOWLEDGE_SOURCE_POLICY: policy } = _internal
+  // policy 明确点名禁止内部知识库 MCP 工具，并限定三档来源
+  assert.match(policy, /fcp_search_knowledge/)
+  assert.match(policy, /IMA/)
+  assert.match(policy, /Obsidian/)
+  assert.match(policy, /上传知识库/)
+  assert.match(policy, /mcp__xiaobao__search_knowledge_base/)
+  assert.match(policy, /mcp__rag__search_kb/)
+  assert.match(policy, /严禁调用/)
+
+  // 只有绑定了 fcp 专家的工作台会话才注入；未绑定会话返回空串，不干扰用户其他插件
+  assert.equal(build(undefined), '')
+  assert.equal(build({}), '')
+  assert.equal(build({ expertId: 'not-an-expert' }), '')
+  const text = build({ expertId: 'policy' })
+  assert.match(text, /mcp__xiaobao__search_knowledge_base/)
+  assert.match(text, /只允许调用工具 fcp_search_knowledge/)
+  assert.match(text, /【最高优先级·知识取证】/)
+})
+
 test('包元数据与发布版本一致且声明了 dsh.bundle', () => {
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
   assert.equal(pkg.name, 'dsh-fcp')
-  assert.equal(pkg.version, '2.1.0')
+  assert.equal(pkg.version, '2.2.0')
   assert.equal(pkg.author.name, '八大权益')
   assert.ok(pkg.dsh?.bundle?.patch)
   assert.equal(pkg.license, 'SEE LICENSE IN LICENSE')
   const readme = readFileSync(join(root, 'README.md'), 'utf8')
   assert.match(readme, /2\.0\.0/)
+  assert.ok(readme.includes('version-' + pkg.version + '-'), 'README 版本徽标须与 package.json 一致')
 })
 
 test('技能 frontmatter 解析与归一化（宿主只认 kebab-case 调用名）', () => {
@@ -311,4 +426,119 @@ test('上传 Markdown 后可被本地检索命中，删除后不再命中', asyn
   } finally {
     await rm(scratch, { recursive: true, force: true })
   }
+})
+
+/* ---------- 2026-11-20 全量自查后的修复回归 ---------- */
+
+test('纯中文无分隔长句也会拆出可命中的短词', () => {
+  const a = rewriteImaQueries('金融消保审查')
+  assert.ok(a.includes('消保'), '应拆出「消保」')
+  assert.ok(a.includes('审查'), '应拆出「审查」')
+  const b = rewriteImaQueries('5号令出台的历史背景')
+  assert.ok(b.includes('历史背景'))
+  assert.ok(b.includes('背景'))
+  assert.ok(a.length <= 10 && b.length <= 10, '拆词数量要受控，避免串行请求暴增')
+})
+
+test('纯中文长句经拆词后能降级命中 IMA（此前恒 0 条）', async () => {
+  const originalFetch = globalThis.fetch
+  const seen = []
+  globalThis.fetch = async (_url, options) => {
+    const q = JSON.parse(options.body).query
+    seen.push(q)
+    // 模拟 IMA 精确短语匹配：只有短词「消保」能命中
+    const list = q === '消保' ? [{ title: '消保审查.docx', highlight_content: '消保审查要点' }] : []
+    return { ok: true, status: 200, json: async () => ({ code: 0, data: { info_list: list } }) }
+  }
+  try {
+    const ima = { apiKey: 'k', clientId: 'c', selectedKbs: ['kb1'], kbs: [{ id: 'kb1', name: '核心文件' }] }
+    const result = await searchIma(ima, '金融消保审查')
+    assert.ok(result.length > 0, '长句应通过拆词降级命中')
+    assert.match(result[0].title, /消保审查/)
+    assert.ok(seen.includes('消保'))
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('IMA 调用失败与「库中无资料」可区分，不再静默误判', async () => {
+  const scratch = join(homedir(), '.dsh-fcp-imafail-' + process.pid)
+  await mkdir(scratch, { recursive: true })
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () => { throw new Error('network down') }
+  try {
+    await _internal.writeKbConfig(scratch, {
+      ima: { apiKey: 'k', clientId: 'c', configured: true, selectedKbs: ['kb1'], kbs: [{ id: 'kb1', name: '金融消保监管知识库' }] },
+      obsidian: {},
+    })
+    const result = await _internal.retrieveKnowledge(scratch, '金融消保审查')
+    assert.equal(result.found, false)
+    assert.match(result.guidance, /IMA 知识库本次调用失败/)
+    assert.match(result.guidance, /network down/)
+    assert.match(result.guidance, /不能据此断言库中没有资料/)
+  } finally {
+    globalThis.fetch = originalFetch
+    await rm(scratch, { recursive: true, force: true })
+  }
+})
+
+test('技能状态幽灵项被磁盘事实清理，已安装列表不再虚高', async () => {
+  const scratch = join(homedir(), '.dsh-fcp-ghost-' + process.pid)
+  const skillDir = join(scratch, 'skills', 'real-skill')
+  await mkdir(skillDir, { recursive: true })
+  await writeFile(join(skillDir, 'SKILL.md'), '---\nname: real-skill\n---\n', 'utf8')
+  await mkdir(join(scratch, 'storages', 'fcp'), { recursive: true })
+  const stateFile = join(scratch, 'storages', 'fcp', 'skills-state.json')
+  await writeFile(stateFile, JSON.stringify({
+    installed: ['real-skill', 'ghost-a', 'ghost-b'],
+    names: { 'ghost-a': '幽灵技能' },
+  }), 'utf8')
+  try {
+    const merged = await mergedInstalledState(scratch)
+    assert.deepEqual(merged.installed, ['real-skill'])
+    const state = JSON.parse(await readFile(stateFile, 'utf8'))
+    assert.deepEqual(state.installed, ['real-skill'])
+    assert.equal(state.names['ghost-a'], undefined)
+  } finally {
+    await rm(scratch, { recursive: true, force: true })
+  }
+})
+
+test('用户显式卸载的默认技能不会被自动安装装回', async () => {
+  const scratch = join(homedir(), '.dsh-fcp-userremoved-' + process.pid)
+  await mkdir(join(scratch, 'storages', 'fcp'), { recursive: true })
+  await writeSkillState(scratch, { installed: [], names: {}, userRemoved: ['will-skip'] })
+  const installed = []
+  try {
+    const results = await _internal.ensureDefaultSkills({
+      dshHome: scratch,
+      catalog: { skills: [{ id: 'will-skip' }, { id: 'will-install' }] },
+      ids: ['will-skip', 'will-install'],
+      install: async (skill) => {
+        installed.push(skill.id)
+        const dir = join(scratch, 'skills', skill.id)
+        await mkdir(dir, { recursive: true })
+        await writeFile(join(dir, 'SKILL.md'), '---\nname: ' + skill.id + '\n---\n', 'utf8')
+        return { path: dir }
+      },
+    })
+    const byId = Object.fromEntries(results.map((item) => [item.id, item]))
+    assert.equal(byId['will-skip'].status, 'user-removed')
+    assert.equal(byId['will-install'].status, 'installed')
+    assert.deepEqual(installed, ['will-install'])
+    const state = JSON.parse(await readFile(join(scratch, 'storages', 'fcp', 'skills-state.json'), 'utf8'))
+    assert.ok(state.userRemoved.includes('will-skip'), '卸载意图应保留，不被自动安装覆盖')
+  } finally {
+    await rm(scratch, { recursive: true, force: true })
+  }
+})
+
+test('专家定义不再引用目录中不存在的技能，5号令历史背景命中政策研究', () => {
+  const removed = ['policy-research', 'financial-literacy-education']
+  for (const expert of EXPERTS) {
+    for (const id of expert.skills) {
+      assert.ok(!removed.includes(id), expert.id + ' 引用了不存在的技能 ' + id)
+    }
+  }
+  assert.equal(routeTask('5号令出台的历史背景').expertId, 'policy')
 })

@@ -4,7 +4,7 @@
 
 > **把金融消费者权益保护岗位的工作流程、要点、技能与知识，打包成一个工作台。** 消保从业人员打开即用，迅速、高效地开展日常工作。
 
-[![版本](https://img.shields.io/badge/version-2.1.0-0B57D0)](https://github.com/openfcp/dsh-fcp/releases)
+[![版本](https://img.shields.io/badge/version-2.2.0-0B57D0)](https://github.com/openfcp/dsh-fcp/releases)
 [![许可证](https://img.shields.io/badge/license-个人非商业-use)](LICENSE)
 [![平台](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey)](https://github.com/openfcp/dsh-fcp)
 
@@ -73,7 +73,7 @@
 
 ## 安装
 
-1. 从 [Releases](https://github.com/openfcp/dsh-fcp/releases) 下载 `dsh-fcp-2.1.0.zip` 并解压；或直接克隆本仓库：
+1. 从 [Releases](https://github.com/openfcp/dsh-fcp/releases) 下载 `dsh-fcp-2.2.0.zip` 并解压；或直接克隆本仓库：
 
    ```sh
    git clone https://github.com/openfcp/dsh-fcp.git
@@ -97,7 +97,7 @@
 ## 隐私与安全
 
 - 配置（IMA Key、Obsidian 路径、模型、技能选择）保存在浏览器 `localStorage`；技能安装状态保存在共享技能目录 `~/.dsh/skills`
-- 知识检索配置会同步一份到本机 `~/.dsh/storages/fcp/kb-config.json`（权限 600）供检索工具读取；上传的知识库索引在 `~/.dsh/storages/fcp/kb-index.json`。全部只在本机，不上传第三方
+- 知识检索配置会同步一份到本机 `~/.dsh/storages/fcp/kb-config.json`（权限 600）供检索工具读取；上传的知识库索引在 `~/.dsh/storages/fcp/kb-index.json`；工作台会话与专家的绑定关系在 `~/.dsh/storages/fcp/bindings.json`；技能安装与卸载状态在 `~/.dsh/storages/fcp/skills-state.json`。全部只在本机，不上传第三方
 - IMA API Key 等凭证仅在本机与 IMA 官方接口之间传递，不上传第三方
 - 所有 `/api/fcp/*` 路由只监听本机回环，校验 `Host` 白名单；写操作要求同源自定义头与 JSON 请求体，抵御 DNS rebinding 与跨站请求
 - 目录选择限定在用户主目录内，技能 id 有白名单与长度限制
@@ -134,6 +134,7 @@ dsh-fcp/
 
 ## 版本历史
 
+- **2.2.0**：修复 IMA 纯中文长句恒 0 命中（自动拆出短词）与凭证/网络失败被静默误判为「库中无资料」；技能已安装状态以磁盘事实为准、用户卸载的默认技能不再被自动装回；专家定义不再引用已下架技能；补齐「5号令」等专家路由关键词与知识配置文案；测试扩充至 33/33
 - **2.1.0**：新增模型可调用的知识检索工具 `fcp_search_knowledge`，按 IMA → Obsidian → 上传知识库 三档顺序查证，未命中如实说明、不编造引用；设置新增「上传知识库」，支持 Markdown / zip 知识包本地上传与即时索引；提示词去除对具体 MCP 工具名的硬编码，换电脑只需重配凭证或重传知识包即可用。
 - **2.0.0**：输入框与工作模式改造、一键进入流程、技能页对齐金融技能插件、技能真安装与跨插件即时同步、IMA 上下分区、模型卡片与预设、全平台适配、帮助页与头图、性能优化；许可证改为个人非商业协议。
 - **1.0.1**：安全加固、截图修复、补测试与 CI。
@@ -145,6 +146,6 @@ dsh-fcp/
 
 本插件采用**个人非商业使用许可协议（APEC）**，仅供个人下载、学习与研究使用，**禁止商用**。详见 [LICENSE](LICENSE)。
 
-问题、建议与合作：**support@openfcp.com**
+问题与建议：**support@openfcp.com**
 
 作者：**八大权益**
