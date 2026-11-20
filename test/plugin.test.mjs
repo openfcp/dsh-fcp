@@ -12,6 +12,9 @@ import {
   parseFrontmatter, normalizeSkillFrontmatter, resolveDshHome,
   extractZip,
 } from '../lib/skills.js'
+import {
+  tokenize, scoreMatch, buildChunks, createKnowledgeTool,
+} from '../lib/kb.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const {
@@ -143,7 +146,7 @@ test('六位专家可解析，路由有关键词命中与兜底', () => {
 test('包元数据与发布版本一致且声明了 dsh.bundle', () => {
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
   assert.equal(pkg.name, 'dsh-fcp')
-  assert.equal(pkg.version, '2.0.0')
+  assert.equal(pkg.version, '2.1.0')
   assert.equal(pkg.author.name, '八大权益')
   assert.ok(pkg.dsh?.bundle?.patch)
   assert.equal(pkg.license, 'SEE LICENSE IN LICENSE')
@@ -183,4 +186,75 @@ test('许可证为个人非商业使用协议且含联系邮箱', () => {
   assert.match(license, /非商业|非商用/)
   assert.match(license, /仅供个人/)
   assert.match(license, /support@openfcp\.com/)
+})
+
+test('知识检索分词：中文按二字切片、英文按词', () => {
+  const tokens = tokenize('金融消费者权益保护 GDPR compliance')
+  assert.ok(tokens.includes('金融'))
+  assert.ok(tokens.includes('消费者权益'.slice(0, 2)))
+  assert.ok(tokens.includes('gdpr'))
+  assert.ok(tokens.includes('compliance'))
+  assert.ok(scoreMatch('消费者权益', '保护金融消费者权益') > 0)
+  assert.equal(scoreMatch('消费者权益', '无关内容'), 0)
+})
+
+test('Markdown 长文按段落切块且保留内容', () => {
+  const text = Array.from({ length: 40 }, (_, i) => '第' + i + '条 相关规定内容。').join('\n\n')
+  const chunks = buildChunks(text, 200)
+  assert.ok(chunks.length >= 2)
+  assert.match(chunks[0], /相关规定/)
+})
+
+test('知识检索工具定义符合 ctx.tools.register 契约', () => {
+  const tool = createKnowledgeTool('/tmp/fcp-kb-test-home')
+  assert.equal(tool.name, 'fcp_search_knowledge')
+  assert.equal(tool.parameters.type, 'object')
+  assert.deepEqual(tool.parameters.required, ['query'])
+  assert.ok(tool.output.schema.type === 'object')
+  assert.ok(typeof tool.output.render === 'function')
+  const rendered = tool.output.render({ query: 'x' }, { found: false, sources: [], guidance: '未检索到' })
+  assert.equal(rendered[0].type, 'text')
+  assert.match(rendered[0].text, /未检索到/)
+})
+
+test('知识配置读写落在临时 DSH_HOME 并归一化', async () => {
+  const scratch = join(homedir(), '.dsh-fcp-kbtest-' + process.pid)
+  await mkdir(scratch, { recursive: true })
+  try {
+    const { writeKbConfig, readKbConfig } = _internal
+    await writeKbConfig(scratch, {
+      ima: { apiKey: 'k', clientId: 'c', configured: true, selectedKbs: ['b1'], kbs: [{ id: 'b1', name: '国家法律知识库' }] },
+      obsidian: { vault: '/tmp/vault', configured: true },
+    })
+    const config = await readKbConfig(scratch)
+    assert.equal(config.ima.apiKey, 'k')
+    assert.deepEqual(config.ima.selectedKbs, ['b1'])
+    assert.equal(config.ima.kbs[0].name, '国家法律知识库')
+    assert.equal(config.obsidian.vault, '/tmp/vault')
+  } finally {
+    await rm(scratch, { recursive: true, force: true })
+  }
+})
+
+test('上传 Markdown 后可被本地检索命中，删除后不再命中', async () => {
+  const scratch = join(homedir(), '.dsh-fcp-kbup-' + process.pid)
+  await mkdir(scratch, { recursive: true })
+  try {
+    const { addUploadedFile, removeUploadedFile, listUploaded, retrieveKnowledge } = _internal
+    const added = await addUploadedFile(scratch, { name: '投诉时限规范.md', text: '投诉应在十五日内答复，金融消费者权益保护实施办法有明确规定。' })
+    assert.ok(added.id.startsWith('kb-'))
+    assert.ok(added.chunks > 0)
+    assert.equal((await listUploaded(scratch)).length, 1)
+    // 无 IMA/Obsidian 配置时，降级到上传知识库仍可命中
+    const found = await retrieveKnowledge(scratch, '十五日答复')
+    assert.equal(found.found, true)
+    assert.ok(found.sources.some((s) => s.source === '上传知识库'))
+    await removeUploadedFile(scratch, added.id)
+    assert.equal((await listUploaded(scratch)).length, 0)
+    const missing = await retrieveKnowledge(scratch, '十五日答复')
+    assert.equal(missing.found, false)
+    assert.match(missing.guidance, /未检索到/)
+  } finally {
+    await rm(scratch, { recursive: true, force: true })
+  }
 })

@@ -4,7 +4,7 @@
 
 > **把金融消费者权益保护岗位的工作流程、要点、技能与知识，打包成一个工作台。** 消保从业人员打开即用，迅速、高效地开展日常工作。
 
-[![版本](https://img.shields.io/badge/version-2.0.0-0B57D0)](https://github.com/openfcp/dsh-fcp/releases)
+[![版本](https://img.shields.io/badge/version-2.1.0-0B57D0)](https://github.com/openfcp/dsh-fcp/releases)
 [![许可证](https://img.shields.io/badge/license-个人非商业-use)](LICENSE)
 [![平台](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey)](https://github.com/openfcp/dsh-fcp)
 
@@ -56,10 +56,13 @@
 
 ### 📚 知识：让每条结论有据可依
 
-- **IMA**：上下两部分配置——上半填 API Key / Client ID 保存凭证，下半表格勾选知识库（国家法律知识库、八大权益消保知识库为固定阅读）
-- **Obsidian**：绑定 Vault，作为只读知识源
-- **本地知识**：上传 `.md` / `.zip` 加入知识列表
-- 答案优先引用知识库，引用落到文件名/条款/库名
+内置一个**模型可调用的知识检索工具**，回答法规、条款、审查口径等问题前自动查证，检索顺序固定为 **IMA 知识库 → Obsidian → 上传知识库**：
+
+- **IMA**（远程 API，跨机器可用）：上下两部分配置——上半填 API Key / Client ID 保存凭证，下半表格勾选知识库（国家法律知识库、八大权益消保知识库为固定阅读）
+- **Obsidian**：绑定 Vault，作为只读知识源，按关键词检索笔记
+- **上传知识库**：支持 `.md` / `.zip` 知识包，上传即在本机建立索引，可逐条删除。适合把 rag-kb 这类离线资料自行打包带到任意电脑，不内置安装
+- 三处都未命中时如实说明「未检索到权威依据」，**不编造**条号、文件名或引用来源
+- 全部为本插件自有能力，不依赖任何本机预装的 MCP 知识库；换一台电脑只需重新填凭证、绑定目录或重传知识包
 
 ### 🧠 思维与模型
 
@@ -70,7 +73,7 @@
 
 ## 安装
 
-1. 从 [Releases](https://github.com/openfcp/dsh-fcp/releases) 下载 `dsh-fcp-2.0.0.zip` 并解压；或直接克隆本仓库：
+1. 从 [Releases](https://github.com/openfcp/dsh-fcp/releases) 下载 `dsh-fcp-2.1.0.zip` 并解压；或直接克隆本仓库：
 
    ```sh
    git clone https://github.com/openfcp/dsh-fcp.git
@@ -94,6 +97,7 @@
 ## 隐私与安全
 
 - 配置（IMA Key、Obsidian 路径、模型、技能选择）保存在浏览器 `localStorage`；技能安装状态保存在共享技能目录 `~/.dsh/skills`
+- 知识检索配置会同步一份到本机 `~/.dsh/storages/fcp/kb-config.json`（权限 600）供检索工具读取；上传的知识库索引在 `~/.dsh/storages/fcp/kb-index.json`。全部只在本机，不上传第三方
 - IMA API Key 等凭证仅在本机与 IMA 官方接口之间传递，不上传第三方
 - 所有 `/api/fcp/*` 路由只监听本机回环，校验 `Host` 白名单；写操作要求同源自定义头与 JSON 请求体，抵御 DNS rebinding 与跨站请求
 - 目录选择限定在用户主目录内，技能 id 有白名单与长度限制
@@ -130,6 +134,7 @@ dsh-fcp/
 
 ## 版本历史
 
+- **2.1.0**：新增模型可调用的知识检索工具 `fcp_search_knowledge`，按 IMA → Obsidian → 上传知识库 三档顺序查证，未命中如实说明、不编造引用；设置新增「上传知识库」，支持 Markdown / zip 知识包本地上传与即时索引；提示词去除对具体 MCP 工具名的硬编码，换电脑只需重配凭证或重传知识包即可用。
 - **2.0.0**：输入框与工作模式改造、一键进入流程、技能页对齐金融技能插件、技能真安装与跨插件即时同步、IMA 上下分区、模型卡片与预设、全平台适配、帮助页与头图、性能优化；许可证改为个人非商业协议。
 - **1.0.1**：安全加固、截图修复、补测试与 CI。
 - **1.0.0**：首个公开发布版本。
