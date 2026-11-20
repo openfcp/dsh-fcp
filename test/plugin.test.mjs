@@ -13,7 +13,7 @@ import {
   extractZip,
 } from '../lib/skills.js'
 import {
-  tokenize, scoreMatch, buildChunks, createKnowledgeTool,
+  tokenize, scoreMatch, buildChunks, createKnowledgeTool, normalizeSources,
 } from '../lib/kb.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -217,6 +217,24 @@ test('知识检索工具定义符合 ctx.tools.register 契约', () => {
   assert.match(rendered[0].text, /未检索到/)
 })
 
+test('知识检索返回值严格符合 output schema，不泄漏内部 score 字段', () => {
+  const tool = createKnowledgeTool('/tmp/fcp-kb-test-home')
+  const itemSchema = tool.output.schema.properties.sources.items
+  const declared = Object.keys(itemSchema.properties)
+  const normalized = normalizeSources([
+    { source: 'IMA 知识库', title: '办法', excerpt: '条款', score: 10, internal: 'secret' },
+  ])
+  assert.equal(normalized.length, 1)
+  assert.deepEqual(normalized[0], { source: 'IMA 知识库', title: '办法', excerpt: '条款' })
+  // 回归关键：归一化后的每个字段都必须在 schema 中声明，且 schema 为 additionalProperties:false
+  assert.equal(itemSchema.additionalProperties, false)
+  for (const key of Object.keys(normalized[0])) {
+    assert.ok(declared.includes(key), 'schema 未声明字段: ' + key)
+  }
+  assert.ok(declared.includes('score'), 'score 应在 schema 中声明为可选字段')
+  assert.ok(!itemSchema.required.includes('score'))
+})
+
 test('知识配置读写落在临时 DSH_HOME 并归一化', async () => {
   const scratch = join(homedir(), '.dsh-fcp-kbtest-' + process.pid)
   await mkdir(scratch, { recursive: true })
@@ -249,6 +267,10 @@ test('上传 Markdown 后可被本地检索命中，删除后不再命中', asyn
     const found = await retrieveKnowledge(scratch, '十五日答复')
     assert.equal(found.found, true)
     assert.ok(found.sources.some((s) => s.source === '上传知识库'))
+    // 实测返回也不得带 score（此前导致工具 schema 校验失败）
+    for (const source of found.sources) {
+      assert.equal('score' in source, false)
+    }
     await removeUploadedFile(scratch, added.id)
     assert.equal((await listUploaded(scratch)).length, 0)
     const missing = await retrieveKnowledge(scratch, '十五日答复')
